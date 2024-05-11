@@ -121,6 +121,15 @@ async function run() {
             res.send(result);
         })
 
+        // PUT to update a tourist spot by ID
+        app.put('/api/add_volunteer_post/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedData = req.body;
+            const query = { _id: new ObjectId(id) };
+            const result = await volunteerNeedsCollection.updateOne(query, { $set: updatedData });
+            res.send(result);
+        });
+
         app.get('/', (req, res) => {
             res.send('Server is running');
         })
