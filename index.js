@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -49,35 +49,48 @@ async function run() {
             }
         });
 
+        // GET volunteers of the currently authenticated user
+        app.get("/api/user_volunteer_post/:id", async (req, res) => {
+            try {
+                const userId = req.params.id;
+                const cursor = volunteerNeedsCollection.find({ user_id: userId });
+                const result = await cursor.toArray();
+                res.json(result);
+            } catch (error) {
+                console.error('Error fetching user tourist spots:', error);
+                res.status(500).json({ error: 'Failed to fetch user tourist spots' });
+            }
+        });
+
         app.post('/api/request_volunteer', async (req, res) => {
             try {
-              const { postId, volunteerName, volunteerEmail, suggestion } = req.body;
-      
-              // Store volunteer request information in the new collection
-              await volunteerRequestsCollection.insertOne({
-                postId,
-                volunteerName,
-                volunteerEmail,
-                suggestion,
-                status: 'requested'
-              });
-      
-              await volunteerNeedsCollection.updateOne(
-                { _id: postId },
-                { $inc: { volunteersNeeded: -1 } }
-              );
-      
-              res.status(201).json({ message: 'Volunteer request submitted successfully' });
+                const { postId, volunteerName, volunteerEmail, suggestion } = req.body;
+
+                // Store volunteer request information in the new collection
+                await volunteerRequestsCollection.insertOne({
+                    postId,
+                    volunteerName,
+                    volunteerEmail,
+                    suggestion,
+                    status: 'requested'
+                });
+
+                await volunteerNeedsCollection.updateOne(
+                    { _id: postId },
+                    { $inc: { volunteersNeeded: -1 } }
+                );
+
+                res.status(201).json({ message: 'Volunteer request submitted successfully' });
             } catch (error) {
-              console.error('Error submitting volunteer request:', error);
-              res.status(500).json({ error: 'Internal server error' });
+                console.error('Error submitting volunteer request:', error);
+                res.status(500).json({ error: 'Internal server error' });
             }
-          });
+        });
 
         app.post('/api/add_volunteer_post', async (req, res) => {
             try {
                 // Extract data from request body
-                const { category, description, location, thumbnail, postTitle, volunteersNeeded, deadline, organizerName, organizerEmail } = req.body;
+                const { category, description, location, thumbnail, postTitle, volunteersNeeded, deadline, organizerName, organizerEmail, user_id } = req.body;
 
                 // Store data in MongoDB or your preferred database
                 await volunteerNeedsCollection.insertOne({
@@ -89,7 +102,8 @@ async function run() {
                     volunteersNeeded,
                     deadline,
                     organizerName,
-                    organizerEmail
+                    organizerEmail,
+                    user_id
                 });
 
                 res.status(201).json({ message: 'Volunteer post added successfully' });
@@ -98,6 +112,14 @@ async function run() {
                 res.status(500).json({ error: 'Internal server error' });
             }
         });
+
+        // DELETE a volunteer by ID
+        app.delete('/api/add_volunteer_post/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await volunteerNeedsCollection.deleteOne(query);
+            res.send(result);
+        })
 
         app.get('/', (req, res) => {
             res.send('Server is running');
