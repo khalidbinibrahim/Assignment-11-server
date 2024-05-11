@@ -36,6 +36,7 @@ async function run() {
 
         const db = client.db('volunteerDB');
         const volunteerNeedsCollection = db.collection('volunteerNeeds');
+        const volunteerRequestsCollection = db.collection('volunteerRequests');
 
         // API endpoint to fetch volunteer needs sorted by upcoming deadlines
         app.get('/api/add_volunteer_post', async (req, res) => {
@@ -47,6 +48,31 @@ async function run() {
                 res.status(500).json({ error: 'Internal server error' });
             }
         });
+
+        app.post('/api/request_volunteer', async (req, res) => {
+            try {
+              const { postId, volunteerName, volunteerEmail, suggestion } = req.body;
+      
+              // Store volunteer request information in the new collection
+              await volunteerRequestsCollection.insertOne({
+                postId,
+                volunteerName,
+                volunteerEmail,
+                suggestion,
+                status: 'requested'
+              });
+      
+              await volunteerNeedsCollection.updateOne(
+                { _id: postId },
+                { $inc: { volunteersNeeded: -1 } }
+              );
+      
+              res.status(201).json({ message: 'Volunteer request submitted successfully' });
+            } catch (error) {
+              console.error('Error submitting volunteer request:', error);
+              res.status(500).json({ error: 'Internal server error' });
+            }
+          });
 
         app.post('/api/add_volunteer_post', async (req, res) => {
             try {
