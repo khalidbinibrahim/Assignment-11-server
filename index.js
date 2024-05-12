@@ -57,20 +57,32 @@ async function run() {
                 const result = await cursor.toArray();
                 res.json(result);
             } catch (error) {
-                console.error('Error fetching user tourist spots:', error);
-                res.status(500).json({ error: 'Failed to fetch user tourist spots' });
+                console.error('Error fetching user volunteer:', error);
+                res.status(500).json({ error: 'Failed to fetch user volunteer' });
+            }
+        });
+
+        // GET all request for volunteers
+        app.get('/api/request_volunteer', async (req, res) => {
+            try {
+                const volunteerRequests = await volunteerRequestsCollection.find();
+                res.json(volunteerRequests);
+            } catch (error) {
+                console.error('Error fetching volunteer requests:', error);
+                res.status(500).json({ error: 'Internal server error' });
             }
         });
 
         app.post('/api/request_volunteer', async (req, res) => {
             try {
-                const { postId, volunteerName, volunteerEmail, suggestion } = req.body;
+                const { postId, volunteerName, volunteerEmail, user_id, suggestion } = req.body;
 
                 // Store volunteer request information in the new collection
                 await volunteerRequestsCollection.insertOne({
                     postId,
                     volunteerName,
                     volunteerEmail,
+                    user_id,
                     suggestion,
                     status: 'requested'
                 });
@@ -89,8 +101,9 @@ async function run() {
 
         app.post('/api/add_volunteer_post', async (req, res) => {
             try {
-                // Extract data from request body
                 const { category, description, location, thumbnail, postTitle, volunteersNeeded, deadline, organizerName, organizerEmail, user_id } = req.body;
+
+                const updatedVolunteersNeeded = parseInt(volunteersNeeded);
 
                 // Store data in MongoDB or your preferred database
                 await volunteerNeedsCollection.insertOne({
@@ -99,7 +112,7 @@ async function run() {
                     description,
                     category,
                     location,
-                    volunteersNeeded,
+                    volunteersNeeded: updatedVolunteersNeeded,
                     deadline,
                     organizerName,
                     organizerEmail,
@@ -119,7 +132,19 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const result = await volunteerNeedsCollection.deleteOne(query);
             res.send(result);
-        })
+        });
+
+        app.delete('/api/request_volunteer/:id', async (req, res) => {
+            const requestId = req.params.id;
+            try {
+                // Find the volunteer request by ID and remove it from the database
+                await volunteerRequestsCollection.findByIdAndDelete(requestId);
+                res.json({ message: 'Volunteer request deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting volunteer request:', error);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
 
         // PUT to update a tourist spot by ID
         app.put('/api/add_volunteer_post/:id', async (req, res) => {
