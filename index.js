@@ -138,7 +138,7 @@ async function run() {
         app.delete('/api/request_volunteer/:id', async (req, res) => {
             const requestId = req.params.id;
             try {
-                const query = { _id: new ObjectId(id) };
+                const query = { _id: new ObjectId(requestId) };
                 const result = await volunteerRequestsCollection.deleteOne(query);
                 res.json({ message: 'Volunteer request deleted successfully' });
                 res.send(result);
