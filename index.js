@@ -62,11 +62,12 @@ async function run() {
             }
         });
 
-        // GET all request for volunteers
-        app.get('/api/request_volunteer', async (req, res) => {
+        // GET all request for volunteers of the currently authenticated user
+        app.get('/api/user_request_volunteer/:id', async (req, res) => {
             try {
-                const volunteerRequests = await volunteerRequestsCollection.find();
-                res.json(volunteerRequests);
+                const Id = req.params.id;
+                const result = await volunteerRequestsCollection.find({ user_id: Id }).toArray();
+                res.json(result);
             } catch (error) {
                 console.error('Error fetching volunteer requests:', error);
                 res.status(500).json({ error: 'Internal server error' });
@@ -137,9 +138,10 @@ async function run() {
         app.delete('/api/request_volunteer/:id', async (req, res) => {
             const requestId = req.params.id;
             try {
-                // Find the volunteer request by ID and remove it from the database
-                await volunteerRequestsCollection.findByIdAndDelete(requestId);
+                const query = { _id: new ObjectId(id) };
+                const result = await volunteerRequestsCollection.deleteOne(query);
                 res.json({ message: 'Volunteer request deleted successfully' });
+                res.send(result);
             } catch (error) {
                 console.error('Error deleting volunteer request:', error);
                 res.status(500).json({ error: 'Internal server error' });
