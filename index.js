@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
-app.options('*', cors());
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -15,11 +15,13 @@ app.use(cors({
         'https://khalid-bin-ibrahim-11.firebaseapp.com',
         'https://khalid-bin-ibrahim-11.web.app'
     ],
+    credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 // MongoDB connection URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hguto33.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -44,12 +46,16 @@ async function run() {
         const volunteerRequestsCollection = db.collection('volunteerRequests');
 
         // ==========---- AUTH RELATED API ----==========
-        app.post('/jwt', async(req, res) => {
+        app.post('/jwt', async (req, res) => {
             try {
                 const user = req.body;
-                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '4hr'})
-                // res.status(201).json({ message: 'User found successfully' });
-                res.send(token);
+                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4hr' })
+                res
+                    .cookie('access-token', token, {
+                        httpOnly: true,
+                        secure: false
+                    })
+                res.status(201).json({ message: 'User found successfully' });
             } catch (err) {
                 console.error(err);
                 res.status(500).json({ error: 'Internal server error' });
