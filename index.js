@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
+app.options('*', cors());
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -12,7 +14,10 @@ app.use(cors({
         'http://localhost:5173',
         'https://khalid-bin-ibrahim-11.firebaseapp.com',
         'https://khalid-bin-ibrahim-11.web.app'
-    ]
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
 app.use(express.json());
 
@@ -38,6 +43,20 @@ async function run() {
         const volunteerNeedsCollection = db.collection('volunteerNeeds');
         const volunteerRequestsCollection = db.collection('volunteerRequests');
 
+        // ==========---- AUTH RELATED API ----==========
+        app.post('/jwt', async(req, res) => {
+            try {
+                const user = req.body;
+                const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '4hr'})
+                // res.status(201).json({ message: 'User found successfully' });
+                res.send(token);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        })
+
+        // ==========---- GET ----==========
         // API endpoint to fetch volunteer needs sorted by upcoming deadlines
         app.get('/api/add_volunteer_post', async (req, res) => {
             try {
@@ -74,6 +93,8 @@ async function run() {
             }
         });
 
+        // ==========---- POST ----==========
+        // Post request for be a volunteer
         app.post('/api/request_volunteer', async (req, res) => {
             try {
                 const { postId, volunteerName, volunteerEmail, user_id, suggestion } = req.body;
@@ -100,6 +121,7 @@ async function run() {
             }
         });
 
+        // Post request for add a volunteer
         app.post('/api/add_volunteer_post', async (req, res) => {
             try {
                 const { category, description, location, thumbnail, postTitle, volunteersNeeded, deadline, organizerName, organizerEmail, user_id } = req.body;
@@ -127,6 +149,7 @@ async function run() {
             }
         });
 
+        // ==========---- DELETE ----==========
         // DELETE a volunteer by ID
         app.delete('/api/add_volunteer_post/:id', async (req, res) => {
             const id = req.params.id;
@@ -135,6 +158,7 @@ async function run() {
             res.send(result);
         });
 
+        // DELETE a request for volunteer
         app.delete('/api/request_volunteer/:id', async (req, res) => {
             const requestId = req.params.id;
             try {
@@ -148,6 +172,7 @@ async function run() {
             }
         });
 
+        // ==========---- PUT ----==========
         // PUT to update a tourist spot by ID
         app.put('/api/add_volunteer_post/:id', async (req, res) => {
             const id = req.params.id;
