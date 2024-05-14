@@ -36,6 +36,31 @@ const client = new MongoClient(uri, {
     }
 });
 
+const logger = async(req, res, next) => {
+    res.status(201).json({ message: 'logger is calling' });
+    next();
+}
+
+const verifyToken = async(req, res, next) =>{
+    const accessToken = req?.cookies?.token;
+
+    if(!accessToken) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+        // ERROR
+        if(err) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // DECODED
+        res.status(201).json({ message: 'Decoded Successfully' });
+        req.user = decoded;
+        next();
+    });
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -51,7 +76,7 @@ async function run() {
                 const user = req.body;
                 const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4hr' })
                 res
-                    .cookie('access-token', token, {
+                    .cookie('token', token, {
                         httpOnly: true,
                         secure: false
                     })
@@ -75,7 +100,7 @@ async function run() {
         });
 
         // GET volunteers of the currently authenticated user
-        app.get("/api/user_volunteer_post/:id", async (req, res) => {
+        app.get("/api/user_volunteer_post/:id",  async (req, res) => {
             try {
                 const userId = req.params.id;
                 const cursor = volunteerNeedsCollection.find({ user_id: userId });
