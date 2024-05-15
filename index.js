@@ -84,7 +84,7 @@ async function run() {
         });        
 
         // ==========---- USER ----==========
-        app.get('/api/user_data', verifyToken, async (req, res) => {
+        app.get('/api/user_data', async (req, res) => {
             try {
                 const { email } = req.user;
                 const user = await usersCollection.findOne({ email }, { projection: { password: 0 } });
@@ -113,7 +113,7 @@ async function run() {
         });
 
         // GET volunteers of the currently authenticated user
-        app.get("/api/user_volunteer_post/:id", verifyToken, async (req, res) => {
+        app.get("/api/user_volunteer_post/:id", async (req, res) => {
             try {
                 const userId = req.params.id;
                 if (req.user.userId !== userId) {
@@ -130,7 +130,7 @@ async function run() {
         });
 
         // GET all request for volunteers of the currently authenticated user
-        app.get('/api/user_request_volunteer/:id', verifyToken, async (req, res) => {
+        app.get('/api/user_request_volunteer/:id', async (req, res) => {
             try {
                 const userId = req.params.id;
                 if (req.user.userId !== userId) {
@@ -147,7 +147,7 @@ async function run() {
 
         // ==========---- POST ----==========
         // Post request for be a volunteer
-        app.post('/api/request_volunteer', verifyToken, async (req, res) => {
+        app.post('/api/request_volunteer', async (req, res) => {
             try {
                 const { postId, volunteerName, volunteerEmail, suggestion } = req.body;
                 const userId = req.user.userId;
@@ -174,7 +174,7 @@ async function run() {
         });
 
         // Post request for add a volunteer
-        app.post('/api/add_volunteer_post', verifyToken, async (req, res) => {
+        app.post('/api/add_volunteer_post', async (req, res) => {
             try {
                 const { category, description, location, thumbnail, postTitle, volunteersNeeded, deadline, organizerName, organizerEmail } = req.body;
                 const userId = req.user.userId;
@@ -204,7 +204,7 @@ async function run() {
 
         // ==========---- DELETE ----==========
         // DELETE a volunteer by ID
-        app.delete('/api/add_volunteer_post/:id', verifyToken, async (req, res) => {
+        app.delete('/api/add_volunteer_post/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id), user_id: req.user.userId };
             const result = await volunteerNeedsCollection.deleteOne(query);
@@ -212,7 +212,7 @@ async function run() {
         });
 
         // DELETE a request for volunteer
-        app.delete('/api/request_volunteer/:id', verifyToken, async (req, res) => {
+        app.delete('/api/request_volunteer/:id', async (req, res) => {
             const requestId = req.params.id;
             const query = { _id: new ObjectId(requestId), user_id: req.user.userId };
             try {
@@ -227,7 +227,7 @@ async function run() {
 
         // ==========---- PUT ----==========
         // PUT to update a volunteer post by ID
-        app.put('/api/add_volunteer_post/:id', verifyToken, async (req, res) => {
+        app.put('/api/add_volunteer_post/:id', async (req, res) => {
             const id = req.params.id;
             const updatedData = req.body;
             const query = { _id: new ObjectId(id), user_id: req.user.userId };
