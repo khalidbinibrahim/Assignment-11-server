@@ -66,11 +66,11 @@ async function run() {
             try {
                 const { email } = req.body;
                 const user = await usersCollection.findOne({ email });
-
+        
                 if (!user) {
                     return res.status(404).json({ error: 'User not found' });
                 }
-
+        
                 const token = jwt.sign({ email: user.email, userId: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4hr' });
                 res.cookie('token', token, {
                     httpOnly: true,
@@ -81,7 +81,7 @@ async function run() {
                 console.error(err);
                 res.status(500).json({ error: 'Internal server error' });
             }
-        });
+        });        
 
         // ==========---- USER ----==========
         app.get('/api/user_data', verifyToken, async (req, res) => {
